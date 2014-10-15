@@ -81,6 +81,12 @@ namespace Sion
             Config.AddSubMenu(new Menu("Misc Settings", "miscs"));
             Config.SubMenu("miscs").AddItem(new MenuItem("skin", "Use Custom Skin").SetValue(true));
             Config.SubMenu("miscs").AddItem(new MenuItem("skin1", "Skin Changer").SetValue(new Slider(1, 1, 5)));
+
+            if (Config.Item("skin").GetValue<bool>())
+            {
+                Packet.S2C.UpdateModel.Encoded(new Packet.S2C.UpdateModel.Struct(Player.NetworkId, Config.Item("skin1").GetValue<Slider>().Value, Player.ChampionName)).Process();
+                lastSkinId = Config.Item("skin1").GetValue<Slider>().Value;
+            }
            
 
             Config.AddToMainMenu();
@@ -225,7 +231,7 @@ namespace Sion
 
         static void laneclear()
         {
-            if (Config.Item("UseWCombo").GetValue<bool>())
+            if (Config.Item("UseWLaneClear").GetValue<bool>())
             {
                 ObjectManager.Player.Spellbook.CastSpell(SpellSlot.W, ObjectManager.Player);
             }
@@ -234,11 +240,7 @@ namespace Sion
         static void Game_OnGameUpdate(EventArgs args)
         {
 
-            if (Config.Item("skin").GetValue<bool>())
-            {
-                Packet.S2C.UpdateModel.Encoded(new Packet.S2C.UpdateModel.Struct(Player.NetworkId, Config.Item("skin1").GetValue<Slider>().Value, Player.ChampionName)).Process();
-                lastSkinId = Config.Item("skin1").GetValue<Slider>().Value;
-            }
+
 
             //Casting R
             if (ObjectManager.Player.HasBuff("SionR"))
@@ -267,6 +269,13 @@ namespace Sion
             if (Config.Item("LaneClearActive").GetValue<KeyBind>().Active)
             {
                 laneclear();
+            }
+
+            //skin changer
+            if (Config.Item("skin").GetValue<bool>() && Config.Item("skin1").GetValue<Slider>().Value != lastSkinId)
+            {
+                Packet.S2C.UpdateModel.Encoded(new Packet.S2C.UpdateModel.Struct(Player.NetworkId, Config.Item("skin1").GetValue<Slider>().Value, Player.ChampionName)).Process();
+                lastSkinId = Config.Item("skin1").GetValue<Slider>().Value;
             }
 
         }
