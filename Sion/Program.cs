@@ -17,6 +17,7 @@ namespace Sion
         public static Orbwalking.Orbwalker Orbwalker;
         public static Spell Q;
         public static Spell E;
+        public static Spell W;
         public static Int32 lastSkinId = 0;
         public static Obj_AI_Hero Player = ObjectManager.Player;
 
@@ -35,11 +36,13 @@ namespace Sion
             Q.SetSkillshot(0.6f, 100f, float.MaxValue, false, SkillshotType.SkillshotLine);
             Q.SetCharged("SionQ", "SionQ", 500, 720, 0.5f);
 
+            W = new Spell(SpellSlot.W);
+
             E = new Spell(SpellSlot.E, 800);
             E.SetSkillshot(0.25f, 80f, 1800, false, SkillshotType.SkillshotLine);
 
             //Make the menu
-            Config = new Menu("Sion", "Sion", true);
+            Config = new Menu("Sion The Meat Walker", "Sion The Meat Walker", true);
 
             //Orbwalker submenu
             Config.AddSubMenu(new Menu("Orbwalking", "Orbwalking"));
@@ -68,7 +71,7 @@ namespace Sion
 
             //laneclear
             Config.AddSubMenu(new Menu("LaneClear", "LaneClear"));
-            Config.SubMenu("LaneClear").AddItem(new MenuItem("UseWLaneClear", "Use W").SetValue(true));
+            Config.SubMenu("LaneClear").AddItem(new MenuItem("UseWLaneClear", "Use W").SetValue(false));
             Config.SubMenu("LaneClear").AddItem(new MenuItem("LaneClearActive", "LaneClear!").SetValue(new KeyBind(Config.Item("LaneClear").GetValue<KeyBind>().Key, KeyBindType.Press)));
 
 
@@ -80,7 +83,8 @@ namespace Sion
             //misc
             Config.AddSubMenu(new Menu("Misc Settings", "miscs"));
             Config.SubMenu("miscs").AddItem(new MenuItem("skin", "Use Custom Skin").SetValue(true));
-            Config.SubMenu("miscs").AddItem(new MenuItem("skin1", "Skin Changer").SetValue(new Slider(1, 1, 5)));
+            Config.SubMenu("miscs").AddItem(new MenuItem("skin1", "Skin Changer").SetValue(new Slider(0, 0, 4)));
+            Config.SubMenu("miscs").AddItem(new MenuItem("packet", "Use Packets").SetValue(true));
 
             if (Config.Item("skin").GetValue<bool>())
             {
@@ -90,6 +94,7 @@ namespace Sion
            
 
             Config.AddToMainMenu();
+            // end menu
 
             Game.PrintChat("Sion Loaded! by iMeh Modify by nongnoobjung");
             Game.OnGameUpdate += Game_OnGameUpdate;
@@ -98,6 +103,10 @@ namespace Sion
             Obj_AI_Hero.OnProcessSpellCast += ObjAiHeroOnOnProcessSpellCast;
         }
 
+        public static bool packets()
+        {
+            return Config.Item("packet").GetValue<bool>();
+        }
 
 
         private static void ObjAiHeroOnOnProcessSpellCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
@@ -166,14 +175,14 @@ namespace Sion
                     }
                 }
 
-                if (qTarget != null && Config.Item("UseWHarass").GetValue<bool>())
+                if (qTarget != null && Config.Item("UseWHarass").GetValue<bool>() && W.IsReady() )
                 {
                     ObjectManager.Player.Spellbook.CastSpell(SpellSlot.W, ObjectManager.Player);
                 }
 
-                if (eTarget != null && Config.Item("UseEHarass").GetValue<bool>())
+                if (eTarget != null && Config.Item("UseEHarass").GetValue<bool>() && E.IsReady())
                 {
-                    E.Cast(eTarget);
+                    E.Cast(eTarget,packets());
                 }
         }
 
@@ -218,20 +227,27 @@ namespace Sion
                 }
             }
 
-            if (qTarget != null && Config.Item("UseWCombo").GetValue<bool>())
+            if (qTarget != null && Config.Item("UseWCombo").GetValue<bool>() && W.IsReady())
             {
                 ObjectManager.Player.Spellbook.CastSpell(SpellSlot.W, ObjectManager.Player);
             }
 
-            if (eTarget != null && Config.Item("UseECombo").GetValue<bool>())
+            if (eTarget != null && Config.Item("UseECombo").GetValue<bool>() && E.IsReady())
             {
-                E.Cast(eTarget);
+                E.Cast(eTarget,packets());
             }
         }
 
         static void laneclear()
         {
-            if (Config.Item("UseWLaneClear").GetValue<bool>())
+            //q
+            var allMinions = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, W.Range,
+                MinionTypes.All, MinionTeam.NotAlly);
+
+
+
+            //w
+            if (Config.Item("UseWLaneClear").GetValue<bool>() && W.IsReady() && allMinions.Count > 0)
             {
                 ObjectManager.Player.Spellbook.CastSpell(SpellSlot.W, ObjectManager.Player);
             }
